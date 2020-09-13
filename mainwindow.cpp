@@ -1,21 +1,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QDebug>
+#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setFixedSize(450,500);
-    ui->textEdit_show->setText("press the button");
-    process="";  //过程值，第二个按的数
-    result=0;
-    S="";  //第一个数在屏幕上输出
-    stat=0;  //状态值，选择某个运算符号
-    choose=0;
-    sum=0;
-    dot=0;
+    ui->lineEdit->setReadOnly(true);//只读模式
+    ui->lineEdit->setAlignment(Qt::AlignRight);//从右侧显示
+    setWindowTitle(QString("简易计算器"));//设置标题
 }
 
 MainWindow::~MainWindow()
@@ -23,394 +18,242 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
-void MainWindow::on_pushButton_0_clicked()
+void MainWindow::getChar()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="0";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="0";
-            ui->textEdit_show->setText(process);
-        }
+    ba=in.toLatin1();
 }
 
-void MainWindow::on_pushButton_00_clicked()
+void MainWindow::getSuffix()
 {
-    if(stat==-1)
-    {
-        result=sum;
-        on_pushButton_clear_clicked();
-    }
-    if(choose==0)
-    {
-        S+="00";
-        ui->textEdit_show->setText(S);
-    }
-    else if(choose!=0)
-    {
-        process+="00";
-        ui->textEdit_show->setText(process);
-    }
+  for(int i=0;i<ba.size();i++)
+  {
+      if((ba[i]>='0' && ba[i]<='9')||ba[i]=='.')//1,数字直接输出
+      {
+         QString str;
+         QByteArray m;
+         for(;(ba[i]>='0' && ba[i]<='9')||ba[i]=='.';i++)
+         {
+             //将一个数字存储到字节数组m中
+             char x=ba[i];
+             m.append(x);
+         }
+         //将字节数组m转换为QString，并将字符串输出
+         str=QString(m);
+         out.append(str);
+         i--;
+      }else if(s1.isEmpty())//2,遇见非数字时, 如果堆栈为空，则直接把该字符放入堆栈
+      {
+          s1.push(ba[i]);
+      }else if(ba[i]=='+' || ba[i]=='-')
+          //2.1,如果是+或- 那么遍历堆栈栈顶元素 一直输出优先级>=加减的 即输出栈顶的+-*/,
+          //当遇到其他字符时（如左括号）或堆栈空时break
+      {
+          while(!s1.empty()){
+              if(s1.top()=='+' || s1.top()=='-'||s1.top()=='*' || s1.top()=='/'){
+                  //把字符转换为字符串输出
+                  QString str=QString(s1.pop());
+                  out.append(str);
+               }else break;
+          }
+          s1.push(ba[i]);
+      }else if(ba[i]=='*' || ba[i]=='/')
+          //2.2,如果是*或/ 那么遍历堆栈栈顶元素 一直输出优先级>=乘除的 即输出栈顶的*/,
+          //当遇到其他字符时（如左括号，减号，除号）或堆栈空时break
+      {
+          while(!s1.empty()){
+              if(s1.top()=='*' || s1.top()=='/'){
+                  //把字符转换为字符串输出
+                  QString str=QString(s1.pop());
+                  out.append(str);
+               }else break;
+          }
+          s1.push(ba[i]);
+      }else if(ba[i]==')')
+          //2.3,如果该字符是右括号时，一直输出栈顶元素，直到遇见左括号为止break:
+      {
+          while(!s1.empty()){
+              if(s1.top()=='('){
+                  s1.pop();
+                  break;
+              }
+              //把字符转换为字符串输出
+              QString str=QString(s1.pop());
+              out.append(str);
+          }
+      }else if(ba[i]=='(')
+          //2.4,如果该字符是左括号时，直接放入堆栈
+      {
+          s1.push(ba[i]);
+      }
+  }
+  //字符串循环结束后 再输出堆栈中剩余的数据
+  while(!s1.empty()){
+      //把字符转换为字符串输出
+      QString str=QString(s1.pop());
+      out.append(str);
+  }
+  //输出后缀表达式
+  qDebug()<<out;
 }
 
-void MainWindow::on_pushButton_1_clicked()
+void MainWindow::Calc_Suffix()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="1";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="1";
-            ui->textEdit_show->setText(process);
-        }
+  for(int i=0;i<out.size();i++)
+  {
+      bool is_Num =true;
+      out[i].toFloat(&is_Num);
+      if(is_Num)//如果是数字，直接入栈
+      {
+          s2.push(out[i].toFloat(&is_Num));
+      }else if(out[i]=="+"||out[i]=="-"||out[i]=="*"||out[i]=="/")//如果是运算符，弹栈两次，并进行运算，运算后，结果入栈
+      {
+          float x=s2.pop();
+          float y=s2.pop();
+          if(out[i]=="+")
+          {
+              s2.push(y+x);
+          }else if(out[i]=="-"){
+              s2.push(y-x);
+          }else if(out[i]=="*"){
+              s2.push(y*x);
+          }else if(out[i]=="/"){
+              s2.push(y/x);
+          }
+      }
+  }
+  result = s2.pop();
+  qDebug()<<result;
+}
+
+void MainWindow::m_init()
+{
+    ba.clear();
+    out.clear();
+}
+
+
+void MainWindow::on_pushButton_clicked()
+{
+    in=ui->lineEdit->text();//获取表达式
+    getChar();
+    getSuffix();
+    Calc_Suffix();
+    ui->lineEdit->clear();//清空文本编辑框
+    ui->lineEdit->setText(QString("%1").arg(result));//显示结果
+    m_init();
 }
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="2";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="2";
-            ui->textEdit_show->setText(process);
-        }
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(0));
 }
 
 void MainWindow::on_pushButton_3_clicked()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="3";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="3";
-            ui->textEdit_show->setText(process);
-        }
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(1));
 }
 
 void MainWindow::on_pushButton_4_clicked()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="4";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="4";
-            ui->textEdit_show->setText(process);
-        }
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(2));
 }
 
 void MainWindow::on_pushButton_5_clicked()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="5";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="5";
-            ui->textEdit_show->setText(process);
-        }
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(3));
 }
 
 void MainWindow::on_pushButton_6_clicked()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="6";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="6";
-            ui->textEdit_show->setText(process);
-        }
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(4));
 }
 
 void MainWindow::on_pushButton_7_clicked()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="7";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="7";
-            ui->textEdit_show->setText(process);
-        }
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(5));
 }
 
 void MainWindow::on_pushButton_8_clicked()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="8";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="8";
-            ui->textEdit_show->setText(process);
-        }
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(6));
 }
 
 void MainWindow::on_pushButton_9_clicked()
 {
-    if(stat==-1)
-        {
-            result=sum;
-            on_pushButton_clear_clicked();
-        }
-        if(choose==0)
-        {
-            S+="9";
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process+="9";
-            ui->textEdit_show->setText(process);
-        }
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(7));
 }
 
-void MainWindow::on_pushButton_BackSpace_clicked()
+void MainWindow::on_pushButton_10_clicked()
 {
-    if(choose==0)
-        {
-            S.chop(1);  //退一格
-            ui->textEdit_show->setText(S);
-        }
-        else if(choose!=0)
-        {
-            process.chop(1);  //退一格
-            ui->textEdit_show->setText(process);
-        }
-    }
-
-
-void MainWindow::on_pushButton_Exit_clicked()
-{
-    close();
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(8));
 }
 
-void MainWindow::on_pushButton_clear_clicked()
+void MainWindow::on_pushButton_11_clicked()
 {
-    ui->textEdit_show->setText("press the button");
-    process="";
-    result=0;
-    S="";
-    stat=0;
-    choose=0;
-    dot=0;
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(9));
 }
 
-void MainWindow::on_pushButton_divide_clicked()
+void MainWindow::on_pushButton_12_clicked()
 {
-    if(stat==0||stat==-1)
-        {
-            ui->textEdit_show->append("/");
-        }
-        sum=result;
-        stat=1;
-        choose=4;
-        dot=0;
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("+"));
 }
 
-void MainWindow::on_pushButton_dot_clicked()
+void MainWindow::on_pushButton_13_clicked()
 {
-    if(dot==0)
-        {
-            if(choose==0)
-            {
-                S+=".";
-                ui->textEdit_show->setText(S);
-            }
-            else if(choose!=0)
-            {
-                process+=".";
-                ui->textEdit_show->setText(process);
-            }
-        }
-        stat=1;
-        dot=1;
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("-"));
 }
 
-void MainWindow::on_pushButton_equal_clicked()
+void MainWindow::on_pushButton_14_clicked()
 {
-    switch(choose)
-    {
-        case 1:
-
-            result+=S.toFloat()+process.toFloat();
-            sum=result;
-
-            Sresult=QString("%1").arg(result);
-            ui->textEdit_show->setText(Sresult);
-            break;
-        case 2:
-            result+=S.toFloat()-process.toFloat();
-            sum=result;
-            Sresult=QString("%1").arg(result);
-            ui->textEdit_show->setText(Sresult);
-            break;
-        case 3:
-
-            if(sum==0)
-            {
-               result=1;
-            }
-            else
-            {
-               result=sum;
-            }
-            if(S.toFloat()*process.toFloat()!=0)
-            {
-                result*=S.toFloat()*process.toFloat();
-                qDebug()<<result<<""<<sum;
-            }
-            else
-            {
-                result*=(S.toFloat()+process.toFloat());
-                qDebug()<<result<<""<<sum;
-            }
-            sum=result;
-            Sresult=QString("%1").arg(result);
-            ui->textEdit_show->setText(Sresult);
-            break;
-        case 4:
-            if(process.toFloat()==0)
-            {
-                ui->textEdit_show->setText("system error!");
-                QTimer::singleShot(1000,this,SLOT(on_pushButton_clear_clicked()));
-                break;
-            }
-            if(sum==0)
-            {
-                result=1;
-            }
-            else
-            {
-                result=sum;
-            }
-            if(S.toFloat()/process.toFloat()!=0)
-            {
-                result=S.toFloat()/process.toFloat();
-                qDebug()<<result<<""<<sum;
-            }
-            else
-            {
-                result/=(S.toFloat()+process.toFloat());
-                qDebug()<<result<<""<<sum;
-            }
-            sum=result;
-            Sresult=QString("%1").arg(result);
-            ui->textEdit_show->setText(Sresult);
-            break;
-        }
-        sum=result;
-        stat=-1;  //如果刚按了等号又按了数字，相当于做了一次AC,如果按了等号再按加号，就继续计算
-        choose=0;  //可以重新接受运算符
-        S="";
-        process="";
-        //因为连续计算，所以不将过程值清零
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("*"));
 }
 
-void MainWindow::on_pushButton_minus_clicked()
+void MainWindow::on_pushButton_15_clicked()
 {
-    if(stat==0||stat==-1)
-        {
-            ui->textEdit_show->append("-");
-        }
-        stat=1;
-        choose=2;
-        dot=0;
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("/"));
 }
 
-void MainWindow::on_pushButton_multi_clicked()
+void MainWindow::on_pushButton_16_clicked()
 {
-    if(stat==0||stat==-1)
-        {
-            ui->textEdit_show->append("*");
-        }
-        sum=result;
-        stat=1;
-        choose=3;
-        dot=0;
+    //清空所有内容，并初始化
+    ui->lineEdit->clear();
+    m_init();
 }
 
-void MainWindow::on_pushButton_plus_clicked()
+void MainWindow::on_pushButton_17_clicked()
 {
-    if(stat==0||stat==-1)
-        {
-            ui->textEdit_show->append("+");
-        }
-        stat=1;
-        choose=1;
-        dot=0;
+    //退格删除一个字符
+    ui->lineEdit->backspace();
 }
 
-
-void MainWindow::on_textEdit_show_destroyed()
+void MainWindow::on_pushButton_18_clicked()
 {
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("("));
+}
 
+void MainWindow::on_pushButton_19_clicked()
+{
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg(")"));
+}
+
+void MainWindow::on_pushButton_20_clicked()
+{
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("."));
 }
