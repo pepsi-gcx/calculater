@@ -9,10 +9,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setFixedSize(450,450);
+    setFixedSize(450,500);
     ui->lineEdit->setReadOnly(true);//只读模式
     ui->lineEdit->setAlignment(Qt::AlignRight);//从右侧显示
-    setWindowTitle(QString("简易计算器"));//设置标题
+    setWindowTitle(QString("计算器"));//设置标题
 }
 
 MainWindow::~MainWindow()
@@ -50,11 +50,23 @@ void MainWindow::getSuffix()  //获取后缀表达式
           if(ba[i]=='s' || ba[i]=='c'||ba[i]=='t'||ba[i]=='l' )
           {
               //把字符转换为字符串输出
-
-              char x=ba[i];
-              out.append(QString(x));
+              //char x=ba[i];
+              //out.append(QString(x));
               i=i+2;
           }
+      }
+      else if(ba[i]=='s' || ba[i]=='c'||ba[i]=='t' || ba[i]=='l')
+      {
+          while(!s1.empty())
+          {
+              if(s1.top()=='s' || s1.top()=='c'||s1.top()=='t' || s1.top()=='l')
+              {
+                  QString str=QString(s1.pop());
+                  out.append(str);
+              }
+              else break;
+          }
+          s1.push(ba[i]);
       }
       else if(ba[i]=='+' || ba[i]=='-')
           //2.1,如果是+或- 那么遍历堆栈栈顶元素 一直输出优先级>=加减的 即输出栈顶的+-*/,
@@ -62,7 +74,7 @@ void MainWindow::getSuffix()  //获取后缀表达式
       {
           while(!s1.empty())
           {
-              if(s1.top()=='+' || s1.top()=='-'||s1.top()=='*' || s1.top()=='/')
+              if(s1.top()=='+' || s1.top()=='-'||s1.top()=='*' || s1.top()=='/'||s1.top()=='s' || s1.top()=='c'||s1.top()=='t' || s1.top()=='l')
               {
                   //把字符转换为字符串输出
                   QString str=QString(s1.pop());
@@ -77,7 +89,7 @@ void MainWindow::getSuffix()  //获取后缀表达式
       {
           while(!s1.empty())
           {
-              if(s1.top()=='*' || s1.top()=='/')
+              if(s1.top()=='*' || s1.top()=='/'||s1.top()=='s' || s1.top()=='c'||s1.top()=='t' || s1.top()=='l')
               {
                   //把字符转换为字符串输出
                   QString str=QString(s1.pop());
@@ -106,6 +118,21 @@ void MainWindow::getSuffix()  //获取后缀表达式
               out.append(str);
            }
       }
+      else if(ba[i]=='$')
+      {
+          QString str=QString(s1.pop());
+          out.append(str);
+      }
+      else if(ba[i]=='@')
+      {
+          QString str=QString(s1.pop());
+          out.append(str);
+      }
+      else if(ba[i]=='^')
+      {
+          QString str=QString(s1.pop());
+          out.append(str);
+      }
   }
 
   //字符串循环结束后 再输出堆栈中剩余的数据
@@ -128,7 +155,7 @@ void MainWindow::Calc_Suffix()  //计算后缀表达式
       {
           s2.push(out[i].toFloat(&is_Num));
       }
-      else if(out[i]=="+"||out[i]=="-"||out[i]=="*"||out[i]=="/"||out[i]=="s"||out[i]=="c"||out[i]=="t"||out[i]=="l")
+      else if(out[i]=="+"||out[i]=="-"||out[i]=="*"||out[i]=="/")
           //如果是运算符，弹栈两次，并进行运算，运算后，结果入栈
       {
           float x=s2.pop();
@@ -155,6 +182,40 @@ void MainWindow::Calc_Suffix()  //计算后缀表达式
              s2.push(tan(x));
           if(out[i]=="l")
              s2.push(log(x));
+      }
+      else if(out[i]=="$")
+      {
+          int x=s2.pop();
+          int y=s2.pop();
+          int r;
+          do{
+              r=x%y;
+              x=y;
+              y=r;
+          }
+          while (r>0);
+          s2.push(x);
+      }
+      else if(out[i]=="@")
+      {
+          int x=s2.pop();
+          int y=s2.pop();
+          int r;int t=x*y,b;
+          do{
+              r=x%y;
+              x=y;
+              y=r;
+          }
+          while (r>0);
+          b=t/x;
+          s2.push(b);
+      }
+      else if(out[i]=="^")
+      {
+          float y=s2.pop();
+          float x=s2.pop();
+          float t=pow(x,y);
+          s2.push(t);
       }
   }
   result = s2.pop();
@@ -321,35 +382,30 @@ void MainWindow::on_pushButton_23_clicked()
 
 void MainWindow::on_pushButton_24_clicked()
 {
-    //平方
+    //最大公约数
     QString str=ui->lineEdit->text();
-    ui->lineEdit->setText(QString("%1%2").arg(str).arg("^2"));
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("$"));
 }
 
 void MainWindow::on_pushButton_25_clicked()
 {
-    //最大公约数
+    //最小公倍数
+
     QString str=ui->lineEdit->text();
-    ui->lineEdit->setText(QString("%1%2").arg(str).arg("最大公约数"));
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("@"));
 }
 
-void MainWindow::on_pushButton_26_clicked()
-{
-    //最小公倍数
-    QString str=ui->lineEdit->text();
-    ui->lineEdit->setText(QString("%1%2").arg(str).arg("最小公倍数"));
-}
 
 void MainWindow::on_pushButton_27_clicked()
 {
     //log
     QString str=ui->lineEdit->text();
-    ui->lineEdit->setText(QString("%1%2").arg(str).arg("ln"));
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("log"));
 }
 
 void MainWindow::on_pushButton_28_clicked()
 {
-    //三次方
+    //x的y次方
     QString str=ui->lineEdit->text();
-    ui->lineEdit->setText(QString("%1%2").arg(str).arg("^3"));
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("^"));
 }
