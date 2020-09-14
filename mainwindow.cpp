@@ -133,6 +133,11 @@ void MainWindow::getSuffix()  //获取后缀表达式
           QString str=QString(s1.pop());
           out.append(str);
       }
+      else if(ba[i]=='~')
+      {
+          QString str=QString(s1.pop());
+          out.append(str);
+      }
   }
 
   //字符串循环结束后 再输出堆栈中剩余的数据
@@ -215,6 +220,13 @@ void MainWindow::Calc_Suffix()  //计算后缀表达式
           float y=s2.pop();
           float x=s2.pop();
           float t=pow(x,y);
+          s2.push(t);
+      }
+      else if(out[i]=="~")
+      {
+          float y=s2.pop();
+          float x=s2.pop();
+          float t=pow(x,-y);
           s2.push(t);
       }
   }
@@ -395,6 +407,13 @@ void MainWindow::on_pushButton_25_clicked()
     ui->lineEdit->setText(QString("%1%2").arg(str).arg("@"));
 }
 
+void MainWindow::on_pushButton_26_clicked()
+{
+    //反比例函数
+
+    QString str=ui->lineEdit->text();
+    ui->lineEdit->setText(QString("%1%2").arg(str).arg("~"));
+}
 
 void MainWindow::on_pushButton_27_clicked()
 {
