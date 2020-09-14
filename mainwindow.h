@@ -16,8 +16,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void getChar();//将QString转换为QByteArray
-    void getSuffix();//获取后缀表达式
-    void Calc_Suffix();//计算后缀表达式
+    void getS();//获取后缀表达式
+    void Calc_S();//计算后缀表达式
     void m_init();//初始化
 
 private slots:

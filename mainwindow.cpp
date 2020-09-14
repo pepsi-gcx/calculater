@@ -25,7 +25,7 @@ void MainWindow::getChar()  //将QString转换为QByteArray
     ba=in.toLatin1();
 }
 
-void MainWindow::getSuffix()  //获取后缀表达式
+void MainWindow::getS()  //获取后缀表达式
 {
   for(int i=0;i<ba.size();i++)
   {
@@ -150,7 +150,7 @@ void MainWindow::getSuffix()  //获取后缀表达式
   qDebug()<<out;
 }
 
-void MainWindow::Calc_Suffix()  //计算后缀表达式
+void MainWindow::Calc_S()  //计算后缀表达式
 {
   for(int i=0;i<out.size();i++)
   {
@@ -246,8 +246,8 @@ void MainWindow::on_pushButton_clicked()
     //等于号
     in=ui->lineEdit->text();//获取表达式
     getChar();
-    getSuffix();
-    Calc_Suffix();
+    getS();
+    Calc_S();
     ui->lineEdit->clear();//清空文本编辑框
     ui->lineEdit->setText(QString("%1").arg(result));//显示结果
     m_init();
